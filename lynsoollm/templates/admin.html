@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LynSooLLM Console</title>
+  <link rel="stylesheet" href="/static/tdesign.min.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+                   'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+      background: #f3f4f6;
+      color: #1f2937;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ==================== 顶部 Header ==================== */
+    .app-header {
+      background: #0f172a;
+      color: #f1f5f9;
+      height: 52px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e293b;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .app-header .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .app-header .brand .logo {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 14px; color: #fff;
+      letter-spacing: -0.5px;
+    }
+    .app-header .brand .name {
+      font-size: 15px; font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+    .app-header .brand .path {
+      font-size: 12px; color: #94a3b8;
+      margin-left: 12px;
+      padding-left: 12px;
+      border-left: 1px solid #334155;
+      max-width: 360px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .app-header .actions {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .app-header .actions .t-button {
+      --td-button-default-bg-color: #1e293b;
+      --td-button-default-border-color: #334155;
+      --td-button-default-text-color: #cbd5e1;
+      --td-button-default-hover-bg-color: #334155;
+      --td-button-default-hover-border-color: #475569;
+      --td-button-default-hover-text-color: #f1f5f9;
+    }
+
+    /* ==================== 主体布局 ==================== */
+    .app-layout {
+      display: flex;
+      min-height: calc(100vh - 52px);
+    }
+
+    /* 侧边栏 */
+    .app-sider {
+      width: 200px;
+      background: #fff;
+      border-right: 1px solid #e5e7eb;
+      padding: 8px 0;
+      flex-shrink: 0;
+    }
+    .app-sider .menu-item {
+      padding: 10px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #4b5563;
+      font-size: 13px;
+      transition: all 0.15s ease;
+      border-left: 2px solid transparent;
+    }
+    .app-sider .menu-item:hover {
+      background: #f9fafb;
+      color: #111827;
+    }
+    .app-sider .menu-item.active {
+      background: #eff6ff;
+      color: #2563eb;
+      border-left-color: #2563eb;
+      font-weight: 500;
+    }
+    .app-sider .menu-item .num {
+      margin-left: auto;
+      font-size: 11px;
+      color: #9ca3af;
+      background: #f3f4f6;
+      padding: 1px 6px;
+      border-radius: 8px;
+    }
+    .app-sider .menu-item.active .num {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    /* 内容区 */
+    .app-content {
+      flex: 1;
+      padding: 20px;
+      overflow: auto;
+      min-width: 0;
+    }
+
+    /* 卡片面板 */
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+    .panel-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .panel-header h3 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .panel-header .desc {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .panel-body {
+      padding: 20px;
+    }
+    .panel-body .form-tip {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-top: 4px;
+      line-height: 1.6;
+    }
+
+    /* 模型卡片 */
+    .model-list { display: flex; flex-direction: column; gap: 8px; }
+    .model-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s ease;
+      background: #fff;
+    }
+    .model-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 1px 3px rgba(59,130,246,0.1);
+    }
+    .model-card .info { flex: 1; min-width: 0; overflow: hidden; }
+    .model-card .info .row1 {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 4px;
+      flex-wrap: wrap;
+    }
+    .model-card .info .name {
+      font-weight: 600;
+      color: #111827;
+      font-size: 14px;
+    }
+    .model-card .info .meta {
+      color: #6b7280;
+      font-size: 12px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .model-card .actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 12px; }
+
+    /* 标签 */
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 1px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+    .tag-blue { background: #eff6ff; color: #2563eb; }
+    .tag-green { background: #f0fdf4; color: #16a34a; }
+    .tag-orange { background: #fff7ed; color: #ea580c; }
+    .tag-gray { background: #f3f4f6; color: #6b7280; }
+    .tag-purple { background: #faf5ff; color: #9333ea; }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: #9ca3af;
+    }
+    .empty-state .icon-wrap {
+      width: 48px; height: 48px;
+      margin: 0 auto 12px;
+      border-radius: 50%;
+      background: #f3f4f6;
+      display: flex; align-items: center; justify-content: center;
+      color: #d1d5db;
+      font-size: 20px;
+    }
+    .empty-state .hint {
+      font-size: 13px;
+    }
+
+    /* 测试结果 */
+    .test-result {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin-top: 12px;
+    }
+    .test-result .res-row {
+      display: flex;
+      padding: 6px 0;
+      border-bottom: 1px solid #f3f4f6;
+      font-size: 13px;
+    }
+    .test-result .res-row:last-child { border-bottom: none; }
+    .test-result .res-row .label {
+      width: 130px;
+      color: #6b7280;
+      flex-shrink: 0;
+    }
+    .test-result .res-row .value {
+      color: #111827;
+      font-weight: 500;
+      flex: 1;
+      word-break: break-all;
+    }
+    .test-result .res-text {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-top: 6px;
+      font-size: 13px;
+      min-height: 32px;
+      line-height: 1.6;
+    }
+
+    /* 健康检查 */
+    .health-dot {
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    .health-dot.ok { background: #16a34a; }
+    .health-dot.fail { background: #dc2626; }
+
+    /* LoRA 列表 */
+    .lora-item {
+      padding: 10px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+    .lora-item .name { font-weight: 500; color: #111827; }
+    .lora-item .path { color: #6b7280; font-size: 12px; margin-left: 8px; }
+
+    /* ==================== 自适应 ==================== */
+    @media (max-width: 1024px) {
+      .app-sider { width: 64px; }
+      .app-sider .menu-item {
+        justify-content: center;
+        padding: 12px 0;
+        font-size: 11px;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .app-sider .menu-item .num { display: none; }
+      .app-sider .menu-item .text { font-size: 11px; }
+      .app-content { padding: 16px; }
+    }
+    @media (max-width: 768px) {
+      .app-header { padding: 0 12px; }
+      .app-header .brand .path { display: none; }
+      .app-layout { flex-direction: column; }
+      .app-sider {
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 6px;
+        display: flex;
+        overflow-x: auto;
+      }
+      .app-sider .menu-item {
+        padding: 8px 14px;
+        flex-direction: row;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .app-sider .menu-item.active {
+        border-left: none;
+        border-bottom-color: #2563eb;
+      }
+      .app-content { padding: 12px; }
+      .panel-body { padding: 14px; }
+      .model-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .model-card .actions { margin-left: 0; }
+    }
+
+    /* 描述列表响应式 */
+    .t-descriptions { width: 100%; }
+
+    /* 通用工具 */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .w-full { width: 100%; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mb-2 { margin-bottom: 8px; }
+    .text-sm { font-size: 12px; }
+    .text-gray { color: #6b7280; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <!-- ====== Header ====== -->
+  <div class="app-header">
+    <div class="brand">
+      <div class="logo">LS</div>
+      <div class="name">LynSooLLM Console</div>
+      <div class="path" :title="meta.config_path">{{ meta.config_path || '...' }}</div>
+    </div>
+    <div class="actions">
+      <t-button theme="default" size="small" @click="onReload" :loading="reloading">
+        热重载
+      </t-button>
+      <t-button theme="primary" size="small" @click="onSaveAll" :loading="saving">
+        保存
+      </t-button>
+    </div>
+  </div>
+
+  <!-- ====== Layout ====== -->
+  <div class="app-layout">
+
+    <!-- ====== Sider ====== -->
+    <div class="app-sider">
+      <div class="menu-item" :class="{active: tab==='models'}" @click="tab='models'">
+        <span class="text">模型池</span>
+        <span class="num">{{ (config.models||[]).length }}</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='router'}" @click="tab='router'">
+        <span class="text">路由模型</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='device'}" @click="tab='device'">
+        <span class="text">设备上下文</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='pricing'}" @click="tab='pricing'">
+        <span class="text">定价源</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='test'}" @click="tab='test'">
+        <span class="text">测试</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='health'}" @click="tab='health'">
+        <span class="text">可达性</span>
+      </div>
+      <div class="menu-item" :class="{active: tab==='meta'}" @click="tab='meta'">
+        <span class="text">元信息</span>
+      </div>
+    </div>
+
+    <!-- ====== Content ====== -->
+    <div class="app-content">
+
+      <!-- ============ 模型池 ============ -->
+      <div v-show="tab==='models'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>模型池</h3>
+              <div class="desc">管理上游云端模型，每个模型需要指定 provider、endpoint、api_key、protocol</div>
+            </div>
+            <t-button theme="primary" size="small" @click="openModelDialog()">新增模型</t-button>
+          </div>
+          <div class="panel-body">
+            <div v-if="!config.models || config.models.length === 0" class="empty-state">
+              <div class="icon-wrap">[ ]</div>
+              <div class="hint">暂无模型，点击右上角"新增模型"</div>
+            </div>
+            <div v-else class="model-list">
+              <div v-for="(m, idx) in config.models" :key="m.name" class="model-card">
+                <div class="info">
+                  <div class="row1">
+                    <span class="name">{{ m.name }}</span>
+                    <span class="tag tag-orange">{{ m.protocol || 'auto' }}</span>
+                    <span class="tag tag-gray">{{ m.provider || '?' }}</span>
+                    <span v-if="m.quality_tier" class="tag tag-green">T{{ m.quality_tier }}</span>
+                    <span v-if="m.manual_pricing" class="tag tag-blue">
+                      ${{ m.manual_pricing.input_per_1k || 0 }}/{{ m.manual_pricing.output_per_1k || 0 }}
+                    </span>
+                    <span v-if="m.enabled === false" class="tag tag-gray">禁用</span>
+                  </div>
+                  <div class="meta">{{ m.model_id || '-' }} · {{ m.endpoint || '-' }}</div>
+                </div>
+                <div class="actions">
+                  <t-button size="small" variant="outline" @click="openModelDialog(m, idx)">编辑</t-button>
+                  <t-popconfirm content="确认删除？" @confirm="deleteModel(idx)">
+                    <t-button size="small" theme="danger" variant="outline">删除</t-button>
+                  </t-popconfirm>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 路由模型 ============ -->
+      <div v-show="tab==='router'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>路由模型</h3>
+              <div class="desc">选择本地路由 backbone 与接力策略</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-form :data="config.router" label-width="120px" label-align="right">
+              <t-form-item label="Backbone">
+                <t-radio-group v-model="config.router.backbone">
+                  <t-radio value="gemma">Gemma-3-270M</t-radio>
+                  <t-radio value="qwen">Qwen3.5-0.8B</t-radio>
+                </t-radio-group>
+              </t-form-item>
+              <t-form-item label="策略">
+                <t-select v-model="config.router.strategy" style="width:280px">
+                  <t-option value="cost_first">cost_first 优先成本</t-option>
+                  <t-option value="quality_first">quality_first 优先质量</t-option>
+                  <t-option value="balanced">balanced 平衡</t-option>
+                  <t-option value="latency_first">latency_first 优先延迟</t-option>
+                  <t-option value="manual">manual 手动</t-option>
+                </t-select>
+              </t-form-item>
+              <t-form-item label="熵阈值">
+                <t-slider v-model="config.router.entropy_threshold" :min="0.1" :max="5" :step="0.1" show-input style="max-width:400px" />
+                <div class="form-tip">信息熵超过该值即触发 Early-Exit 接力云端（单位 nats）</div>
+              </t-form-item>
+              <t-form-item label="本地最大 token">
+                <t-input-number v-model="config.router.max_new_tokens" :min="1" :max="256" />
+              </t-form-item>
+              <t-form-item label="最小退出步">
+                <t-input-number v-model="config.router.min_tokens_before_exit" :min="0" :max="32" />
+              </t-form-item>
+              <t-form-item label="动态阈值">
+                <t-switch v-model="config.router.dynamic_threshold" />
+                <span class="form-tip" style="margin-left:8px">根据设备上下文动态调整阈值</span>
+              </t-form-item>
+            </t-form>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>Multi-LoRA Adapter</h3>
+              <div class="desc">环境感知的 LoRA adapter 列表，由 EnvAwareSelector 自动选择</div>
+            </div>
+            <t-button theme="default" size="small" variant="outline"
+                      @click="(config.router.lora_adapters = config.router.lora_adapters || []).push({name:'new_adapter', path:''})">
+              添加
+            </t-button>
+          </div>
+          <div class="panel-body">
+            <div v-if="!config.router.lora_adapters || config.router.lora_adapters.length===0" class="empty-state">
+              <div class="icon-wrap">[ ]</div>
+              <div class="hint">暂无 adapter</div>
+            </div>
+            <div v-else>
+              <div v-for="(a, idx) in config.router.lora_adapters" :key="idx" class="lora-item">
+                <div>
+                  <t-input v-model="a.name" size="small" style="width:160px" placeholder="adapter 名" />
+                  <t-input v-model="a.path" size="small" style="width:320px; margin-left:8px" placeholder="路径" />
+                </div>
+                <t-button size="small" theme="danger" variant="text" @click="config.router.lora_adapters.splice(idx,1)">
+                  删除
+                </t-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 设备上下文 ============ -->
+      <div v-show="tab==='device'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>设备上下文</h3>
+              <div class="desc">弱网/低电量/高温时阈值上调，更倾向留在本地</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-form :data="config.device" label-width="140px" label-align="right">
+              <t-form-item label="网络 RTT (ms)">
+                <t-slider v-model="config.device.network_rtt_ms" :min="0" :max="2000" :step="10" show-input style="max-width:500px" />
+              </t-form-item>
+              <t-form-item label="电量 (%)">
+                <t-slider v-model="config.device.battery_pct" :min="0" :max="100" :step="1" show-input style="max-width:500px" />
+              </t-form-item>
+              <t-form-item label="温度 (°C)">
+                <t-slider v-model="config.device.temperature_c" :min="20" :max="80" :step="1" show-input style="max-width:500px" />
+              </t-form-item>
+              <t-form-item label="离线模式">
+                <t-switch v-model="config.device.offline" />
+                <span class="form-tip" style="margin-left:8px">开启后所有请求强制留在本地</span>
+              </t-form-item>
+              <t-form-item label="云端单价 ($/1k)">
+                <t-input-number v-model="config.device.cloud_price_per_1k" :min="0" :step="0.001" :decimal-places="4" />
+              </t-form-item>
+            </t-form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 定价源 ============ -->
+      <div v-show="tab==='pricing'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>定价源</h3>
+              <div class="desc">全局定价缓存配置</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-form :data="config.pricing" label-width="140px" label-align="right">
+              <t-form-item label="缓存路径">
+                <t-input v-model="config.pricing.cache_path" style="width:400px" />
+                <div class="form-tip">models.dev 定价缓存文件路径</div>
+              </t-form-item>
+              <t-form-item label="缓存 TTL (秒)">
+                <t-input-number v-model="config.pricing.cache_ttl_sec" :min="60" :step="60" />
+              </t-form-item>
+              <t-form-item label="零价格兜底">
+                <t-input-number v-model="config.pricing.zero_price_fallback" :min="0" :step="0.001" :decimal-places="4" />
+                <div class="form-tip">models.dev 返回 0 时用的兜底价（USD/1k token）</div>
+              </t-form-item>
+            </t-form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 测试 ============ -->
+      <div v-show="tab==='test'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>路由测试</h3>
+              <div class="desc">输入 prompt，立即调用 LynSooApp.route() 查看路由结果</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-form label-width="100px" label-align="right">
+              <t-form-item label="Prompt">
+                <t-textarea v-model="testPrompt" :autosize="{minRows:2, maxRows:6}" placeholder="讲个笑话" style="width:100%;max-width:600px" />
+              </t-form-item>
+              <t-form-item label="指定模型">
+                <t-select v-model="testPrefer" clearable filterable style="width:300px">
+                  <t-option v-for="m in (config.models||[])" :key="m.name" :value="m.name" :label="m.name" />
+                </t-select>
+                <span class="form-tip" style="margin-left:8px">不选则按策略自动路由</span>
+              </t-form-item>
+              <t-form-item>
+                <t-button theme="primary" @click="runTest" :loading="testing">运行测试</t-button>
+              </t-form-item>
+            </t-form>
+
+            <div v-if="testError" class="test-result" style="background:#fef2f2;border-color:#fecaca;color:#991b1b">
+              <strong>测试失败：</strong>{{ testError }}
+            </div>
+
+            <div v-if="testResult" class="test-result">
+              <div class="res-row">
+                <span class="label">最终文本</span>
+                <span class="value">
+                  <div class="res-text">{{ testResult.text || '(空)' }}</div>
+                </span>
+              </div>
+              <div class="res-row">
+                <span class="label">接力模型</span>
+                <span class="value">{{ testResult.exit_model || '(留在本地)' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">接力延迟</span>
+                <span class="value">{{ testResult.exit_latency_ms ? testResult.exit_latency_ms.toFixed(1) + ' ms' : '-' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">首字延迟</span>
+                <span class="value">{{ testResult.ttft_ms ? testResult.ttft_ms.toFixed(1) + ' ms' : '-' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">总延迟</span>
+                <span class="value">{{ testResult.total_ms ? testResult.total_ms.toFixed(1) + ' ms' : '-' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">Early-Exit</span>
+                <span class="value">{{ testResult.exited ? '是' : '否（硬路由）' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">硬路由</span>
+                <span class="value">{{ testResult.hard_route ? '是（直接上云）' : '否（推测式）' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">LoRA adapter</span>
+                <span class="value">{{ testResult.adapter || '(无)' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">路由标签</span>
+                <span class="value">{{ testResult.route_label === 1 ? 'cloud 上云' : 'local 本地' }}</span>
+              </div>
+              <div class="res-row">
+                <span class="label">路由耗时</span>
+                <span class="value">{{ testResult.route_ms ? testResult.route_ms.toFixed(1) + ' ms' : '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 可达性 ============ -->
+      <div v-show="tab==='health'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>上游可达性</h3>
+              <div class="desc">对每个 endpoint 做 GET /models 探测</div>
+            </div>
+            <t-button theme="default" size="small" @click="checkHealth" :loading="healthLoading">
+              重新检查
+            </t-button>
+          </div>
+          <div class="panel-body">
+            <div v-if="healthResults.length === 0" class="empty-state">
+              <div class="icon-wrap">[ ]</div>
+              <div class="hint">点击"重新检查"开始</div>
+            </div>
+            <div v-else class="model-list">
+              <div v-for="h in healthResults" :key="h.name" class="model-card">
+                <div class="info">
+                  <div class="row1">
+                    <span class="health-dot" :class="{ok: h.ok, fail: !h.ok}"></span>
+                    <span class="name">{{ h.name }}</span>
+                    <span class="tag" :class="h.ok ? 'tag-green' : 'tag-orange'">{{ h.status }}</span>
+                    <span class="tag tag-gray">{{ h.latency_ms }} ms</span>
+                  </div>
+                  <div class="meta" v-if="h.error" style="color: #dc2626">{{ h.error }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ 元信息 ============ -->
+      <div v-show="tab==='meta'">
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>系统元信息</h3>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-descriptions :column="1" bordered>
+              <t-descriptions-item label="配置文件路径">{{ meta.config_path }}</t-descriptions-item>
+              <t-descriptions-item label="路由 Backbone">{{ meta.backbone }}</t-descriptions-item>
+              <t-descriptions-item label="LoRA Adapters">{{ (meta.lora_adapters || []).map(a=>a.name).join(', ') || '(无)' }}</t-descriptions-item>
+              <t-descriptions-item label="服务端 URL">{{ meta.server_url || '(未配置)' }}</t-descriptions-item>
+              <t-descriptions-item label="服务端状态">
+                <span v-if="meta.server_status">
+                  <span v-if="meta.server_status.ok">在线 - {{ meta.server_status.model }}</span>
+                  <span v-else>不可达 - {{ meta.server_status.error }}</span>
+                </span>
+                <span v-else>-</span>
+              </t-descriptions-item>
+            </t-descriptions>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div>
+              <h3>可选值参考</h3>
+            </div>
+          </div>
+          <div class="panel-body">
+            <t-descriptions :column="1" bordered>
+              <t-descriptions-item label="Backbones">{{ meta.backbones.join(', ') }}</t-descriptions-item>
+              <t-descriptions-item label="策略">{{ meta.strategies.join(', ') }}</t-descriptions-item>
+              <t-descriptions-item label="协议">{{ meta.protocols.join(', ') }}</t-descriptions-item>
+              <t-descriptions-item label="定价源">{{ meta.pricing_sources.join(', ') }}</t-descriptions-item>
+            </t-descriptions>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ====== 模型编辑对话框 ====== -->
+  <t-dialog
+    :visible="modelDialogVisible"
+    :header="editingModel && editingModel._index >= 0 ? '编辑模型' : '新增模型'"
+    :width="640"
+    :on-confirm="saveModel"
+    :on-close="() => modelDialogVisible = false"
+    confirm-btn="保存"
+    cancel-btn="取消"
+  >
+    <t-form v-if="editingModel" :data="editingModel" label-width="120px" label-align="right">
+      <t-form-item label="名称">
+        <t-input v-model="editingModel.name" placeholder="deepseek-chat" :disabled="editingModel._index >= 0" />
+        <div class="form-tip">用户自定义名，唯一标识</div>
+      </t-form-item>
+      <t-form-item label="Provider">
+        <t-select v-model="editingModel.provider" :options="providerOptions" />
+      </t-form-item>
+      <t-form-item label="Model ID">
+        <t-input v-model="editingModel.model_id" placeholder="openai/gpt-4o" />
+      </t-form-item>
+      <t-form-item label="Endpoint">
+        <t-input v-model="editingModel.endpoint" placeholder="https://api.openai.com/v1" />
+      </t-form-item>
+      <t-form-item label="API Key">
+        <t-input v-model="editingModel.api_key" placeholder="${OPENAI_API_KEY}" />
+        <div class="form-tip">支持 ${ENV_VAR} 引用环境变量</div>
+      </t-form-item>
+      <t-form-item label="Protocol">
+        <t-select v-model="editingModel.protocol" :options="protocolOptions" />
+        <div class="form-tip">auto 会根据 provider/endpoint 自动推断</div>
+      </t-form-item>
+      <t-form-item label="Quality Tier">
+        <t-input-number v-model="editingModel.quality_tier" :min="0" :max="5" />
+        <div class="form-tip">0=未指定, 1=小, 2=中, 3=大, 4=旗舰</div>
+      </t-form-item>
+      <t-form-item label="Pricing Source">
+        <t-select v-model="editingModel.pricing_source" :options="pricingSourceOptions" />
+      </t-form-item>
+      <t-form-item v-if="editingModel.pricing_source === 'manual'" label="Input $/1k">
+        <t-input-number v-model="manualInputPrice" :min="0" :step="0.0001" :decimal-places="6" />
+      </t-form-item>
+      <t-form-item v-if="editingModel.pricing_source === 'manual'" label="Output $/1k">
+        <t-input-number v-model="manualOutputPrice" :min="0" :step="0.0001" :decimal-places="6" />
+      </t-form-item>
+      <t-form-item label="启用">
+        <t-switch v-model="editingModel.enabled" />
+      </t-form-item>
+      <t-form-item v-if="config.router && config.router.strategy === 'manual'" label="Priority">
+        <t-input-number v-model="editingModel.priority" :min="1" :max="999" />
+        <div class="form-tip">manual 策略下生效，数字越小越优先</div>
+      </t-form-item>
+      <t-form-item v-if="config.router && config.router.strategy === 'manual'" label="Weight">
+        <t-input-number v-model="editingModel.weight" :min="0" :max="1" :step="0.05" :decimal-places="3" />
+      </t-form-item>
+    </t-form>
+  </t-dialog>
+
+</div>
+
+<!-- ====== 依赖（已下载到本地） ====== -->
+<script src="/static/vue.global.prod.js"></script>
+<script src="/static/tdesign.min.js"></script>
+<script src="/static/js-yaml.min.js"></script>
+
+<script>
+const { createApp, ref, reactive, computed, onMounted, watch, nextTick } = Vue;
+// 从 TDesign 引入 MessagePlugin（用于全局消息提示）
+const MessagePlugin = TDesign.MessagePlugin;
+
+createApp({
+  setup() {
+    // ==================== 状态 ====================
+    const tab = ref('models');
+    const meta = reactive({
+      config_path: '', backbone: 'gemma', lora_adapters: [],
+      server_url: '', server_status: null,
+      strategies: [], protocols: [], pricing_sources: [], backbones: [],
+    });
+    const config = reactive({
+      models: [], router: {}, device: {}, pricing: {},
+    });
+    const saving = ref(false);
+    const reloading = ref(false);
+
+    // 模型对话框
+    const modelDialogVisible = ref(false);
+    const editingModel = ref(null);
+    const manualInputPrice = ref(0);
+    const manualOutputPrice = ref(0);
+
+    // 测试
+    const testPrompt = ref('讲个笑话');
+    const testPrefer = ref('');
+    const testing = ref(false);
+    const testResult = ref(null);
+    const testError = ref('');
+
+    // 健康
+    const healthResults = ref([]);
+    const healthLoading = ref(false);
+
+    // ==================== 下拉选项（t-select 在某些场景传字符串数组时 label 显示空白，统一用 {label, value}） ====================
+    const providerOptions = computed(() => [
+      { label: 'openai', value: 'openai' },
+      { label: 'anthropic', value: 'anthropic' },
+      { label: 'gemini', value: 'gemini' },
+      { label: 'deepseek', value: 'deepseek' },
+      { label: 'custom', value: 'custom' },
+    ]);
+    const protocolOptions = computed(() =>
+      (meta.protocols && meta.protocols.length
+        ? meta.protocols
+        : ['auto', 'openai_chat', 'openai_responses', 'anthropic_messages', 'gemini_generate']
+      ).map(p => ({ label: p, value: p }))
+    );
+    const pricingSourceOptions = computed(() =>
+      (meta.pricing_sources && meta.pricing_sources.length
+        ? meta.pricing_sources
+        : ['models_dev', 'official', 'custom_api', 'manual']
+      ).map(p => ({ label: p, value: p }))
+    );
+
+    let saveTimer = null;
+    // 在 loadConfig 期间跳过 watch 触发的自动保存，避免把刚刷新的状态又写回去
+    let skipWatch = false;
+
+    // ==================== API 调用 ====================
+    async function api(path, opts = {}) {
+      const res = await fetch(path, {
+        headers: { 'Content-Type': 'application/json' },
+        ...opts,
+      });
+      if (!res.ok && res.status !== 400) {
+        throw new Error(`${path}: HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    async function loadMeta() {
+      const data = await api('/api/meta');
+      Object.assign(meta, data);
+    }
+
+    async function loadConfig() {
+      const data = await api('/api/config');
+      // 跳过 watch 触发的自动保存（避免循环：删除→刷新→watch→保存回去）
+      skipWatch = true;
+      // 用 splice 替换数组内容，确保 Vue 响应式触发（直接赋值新数组在某些情况下不更新视图）
+      const newModels = data.models || [];
+      config.models.splice(0, config.models.length, ...newModels);
+      // router/device/pricing 用 Object.assign 原地更新
+      Object.assign(config.router, data.router || {});
+      Object.assign(config.device, data.device || {});
+      Object.assign(config.pricing, data.pricing || {});
+      // 清掉可能存在的待保存定时器
+      if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+      // 等 Vue 在下一个 tick 完成响应式更新后再放开 watch
+      await nextTick();
+      skipWatch = false;
+      console.log('[loadConfig] 刷新完成，模型数:', config.models.length);
+    }
+
+    async function saveAll() {
+      saving.value = true;
+      try {
+        const clean = JSON.parse(JSON.stringify(config));
+        if (clean.models) clean.models.forEach(m => { delete m._index; });
+        await api('/api/config', {
+          method: 'PUT',
+          body: JSON.stringify(clean),
+        });
+        MessagePlugin.success('已保存');
+      } catch (e) {
+        MessagePlugin.error('保存失败: ' + e.message);
+      } finally {
+        saving.value = false;
+      }
+    }
+
+    async function onSaveAll() {
+      await saveAll();
+    }
+
+    async function onReload() {
+      reloading.value = true;
+      try {
+        const r = await api('/api/reload', { method: 'POST', body: '{}' });
+        if (r.ok) {
+          MessagePlugin.success('已热重载');
+        } else {
+          MessagePlugin.error('重载失败: ' + (r.error || 'unknown'));
+        }
+        if (r.server) {
+          if (r.server.ok) {
+            MessagePlugin.success('服务端响应: ' + JSON.stringify(r.server.response || {}));
+          } else {
+            MessagePlugin.warning('服务端通知失败: ' + (r.server.error || 'unknown'));
+          }
+        }
+      } catch (e) {
+        MessagePlugin.error('重载失败: ' + e.message);
+      } finally {
+        reloading.value = false;
+      }
+    }
+
+    // ==================== 模型 CRUD ====================
+    function openModelDialog(model, idx) {
+      if (model) {
+        editingModel.value = JSON.parse(JSON.stringify(model));
+        editingModel.value._index = idx;
+        if (model.manual_pricing) {
+          manualInputPrice.value = model.manual_pricing.input_per_1k || 0;
+          manualOutputPrice.value = model.manual_pricing.output_per_1k || 0;
+        } else {
+          manualInputPrice.value = 0;
+          manualOutputPrice.value = 0;
+        }
+      } else {
+        editingModel.value = {
+          name: '', provider: 'openai', model_id: '',
+          endpoint: '', api_key: '', protocol: 'auto',
+          quality_tier: 3, pricing_source: 'models_dev',
+          enabled: true, priority: 100, weight: 0,
+          _index: -1,
+        };
+        manualInputPrice.value = 0;
+        manualOutputPrice.value = 0;
+      }
+      modelDialogVisible.value = true;
+    }
+
+    async function saveModel() {
+      const m = JSON.parse(JSON.stringify(editingModel.value));
+      if (!m.name) {
+        MessagePlugin.error('name 必填');
+        return;
+      }
+      if (m.pricing_source === 'manual') {
+        m.manual_pricing = {
+          input_per_1k: manualInputPrice.value,
+          output_per_1k: manualOutputPrice.value,
+        };
+      } else {
+        delete m.manual_pricing;
+      }
+      delete m._index;
+
+      try {
+        if (editingModel.value._index >= 0) {
+          await api('/api/models/' + encodeURIComponent(m.name), {
+            method: 'PUT', body: JSON.stringify(m),
+          });
+          MessagePlugin.success('已更新 ' + m.name);
+        } else {
+          await api('/api/models', {
+            method: 'POST', body: JSON.stringify(m),
+          });
+          MessagePlugin.success('已新增 ' + m.name);
+        }
+        modelDialogVisible.value = false;
+        await loadConfig();
+      } catch (e) {
+        MessagePlugin.error('保存失败: ' + e.message);
+      }
+    }
+
+    async function deleteModel(idx) {
+      const m = config.models[idx];
+      if (!m) return;
+      console.log('[deleteModel] 开始删除:', m.name, 'idx:', idx);
+      try {
+        await api('/api/models/' + encodeURIComponent(m.name), { method: 'DELETE' });
+        MessagePlugin.success('已删除 ' + m.name);
+        console.log('[deleteModel] DELETE 成功，开始刷新配置');
+        await loadConfig();
+        console.log('[deleteModel] 刷新完成，当前模型数:', config.models.length);
+      } catch (e) {
+        MessagePlugin.error('删除失败: ' + e.message);
+        console.error('[deleteModel] 失败:', e);
+      }
+    }
+
+    // ==================== 测试 ====================
+    async function runTest() {
+      if (!testPrompt.value.trim()) {
+        MessagePlugin.warning('请输入 prompt');
+        return;
+      }
+      testing.value = true;
+      testResult.value = null;
+      testError.value = '';
+      try {
+        const body = { prompt: testPrompt.value };
+        if (testPrefer.value) body.prefer_model = testPrefer.value;
+        const r = await api('/api/test', {
+          method: 'POST', body: JSON.stringify(body),
+        });
+        if (r.ok) {
+          testResult.value = r.result;
+          MessagePlugin.success('测试完成');
+        } else {
+          testError.value = r.error || 'unknown';
+          MessagePlugin.error('测试失败: ' + testError.value);
+        }
+      } catch (e) {
+        testError.value = e.message;
+        MessagePlugin.error('测试失败: ' + e.message);
+      } finally {
+        testing.value = false;
+      }
+    }
+
+    // ==================== 健康检查 ====================
+    async function checkHealth() {
+      healthLoading.value = true;
+      try {
+        const r = await api('/api/upstream-health');
+        healthResults.value = r;
+      } catch (e) {
+        MessagePlugin.error('检查失败: ' + e.message);
+      } finally {
+        healthLoading.value = false;
+      }
+    }
+
+    // ==================== 监听：图形化变更自动保存（防抖 1.5 秒） ====================
+    watch(config, () => {
+      // loadConfig 期间跳过，避免循环
+      if (skipWatch) return;
+      if (saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => {
+        saveAll().catch(() => {});
+      }, 1500);
+    }, { deep: true });
+
+    // ==================== 初始化 ====================
+    onMounted(async () => {
+      try {
+        await Promise.all([loadMeta(), loadConfig()]);
+      } catch (e) {
+        MessagePlugin.error('加载失败: ' + e.message);
+      }
+    });
+
+    return {
+      tab, meta, config,
+      saving, reloading,
+      modelDialogVisible, editingModel,
+      manualInputPrice, manualOutputPrice,
+      testPrompt, testPrefer, testing, testResult, testError,
+      healthResults, healthLoading,
+      providerOptions, protocolOptions, pricingSourceOptions,
+      onSaveAll, onReload,
+      openModelDialog, saveModel, deleteModel,
+      runTest, checkHealth,
+    };
+  },
+})
+.use(TDesign)
+.mount('#app');
+</script>
+</body>
+</html>

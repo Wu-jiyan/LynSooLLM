@@ -1,0 +1,7 @@
+# 灵枢 LynSooLLM 依赖
+torch
+transformers
+peft
+accelerate
+pyyaml
+flask

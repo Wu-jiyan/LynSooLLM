@@ -1,0 +1,37 @@
+models:
+- api_key: ${OPENAI_API_KEY}
+  enabled: true
+  endpoint: https://ai.idcidiot.com/v1
+  manual_pricing:
+    input_per_1k: 0.0006
+    output_per_1k: 0.003
+  model_id: qwen3.6-27b
+  name: qwen3.6-27b
+  pricing_source: manual
+  priority: 100
+  protocol: auto
+  provider: openai
+  quality_tier: 3
+  weight: 0
+router:
+  entropy_threshold: 1.5
+  backbone: gemma
+  dynamic_threshold: true
+  lora_adapters:
+  - name: weak_net
+    path: ./checkpoints/weak_net
+  - name: low_battery
+    path: ./checkpoints/low_battery
+  max_new_tokens: 32
+  min_tokens_before_exit: 1
+  strategy: cost_first
+device:
+  network_rtt_ms: 50
+  battery_pct: 80
+  temperature_c: 30
+  cloud_price_per_1k: 0.01
+  offline: false
+pricing:
+  cache_path: ~/.cache/lynsoollm/models_dev.json
+  cache_ttl_sec: 86400
+  zero_price_fallback: 0.01

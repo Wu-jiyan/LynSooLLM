@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# 测试与缓存
+.pytest_cache/
+.cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# 误创建的字面 ~ 目录（PricingFetcher 把 ~/.cache 当字面路径时会生成）
+~/
+
+# 模型权重 / LoRA 训练产物（体积大，不入库）
+checkpoints/
+*.safetensors
+*.pt
+*.bin
+*.gguf
+*.onnx
+
+# 实际运行配置（含真实 key，禁止入库；example 才入库）
+config.yaml
+config.local.yaml
+*.local.yaml
+
+# 备份
+*.bak
+*.bak.*
+
+# IDE / 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 日志
+*.log
+logs/
