@@ -85,11 +85,16 @@ class OpenAIChatExecutor:
     def __call__(self, entry: ModelEntry, ctx: RelayContext) -> str:
         _require(entry, "endpoint", "api_key")
         url = entry.endpoint.rstrip("/") + "/chat/completions"
+        # 用 chat_messages 把本地已生成文本作为 assistant 预填
+        msgs = ctx.chat_messages()
+        # 有 prefill 时加 system 提示，强化接续意图（兼容不完全支持
+        # prefill 的 OpenAI 兼容代理）
+        sys_hint = ctx.system_hint_for_continuation()
+        if sys_hint:
+            msgs = [{"role": "system", "content": sys_hint}] + msgs
         payload = {
             "model": entry.model_id or entry.name,
-            # 用 chat_messages 把本地已生成文本作为 assistant 预填，
-            # 而不是拼到 user prompt 里（避免污染用户输入）
-            "messages": ctx.chat_messages(),
+            "messages": msgs,
             "stream": False,
         }
         headers = {
@@ -131,11 +136,15 @@ class OpenAIResponsesExecutor:
     def __call__(self, entry: ModelEntry, ctx: RelayContext) -> str:
         _require(entry, "endpoint", "api_key")
         url = entry.endpoint.rstrip("/") + "/responses"
+        # Responses API 的 input 支持字符串或消息数组；用消息数组
+        # 把本地已生成文本作为 assistant 预填
+        msgs = ctx.chat_messages()
+        sys_hint = ctx.system_hint_for_continuation()
+        if sys_hint:
+            msgs = [{"role": "system", "content": sys_hint}] + msgs
         payload: Dict[str, Any] = {
             "model": entry.model_id or entry.name,
-            # Responses API 的 input 支持字符串或消息数组；
-            # 用消息数组把本地已生成文本作为 assistant 预填
-            "input": ctx.chat_messages(),
+            "input": msgs,
             "store": False,                  # 无状态，不存服务端
             "stream": False,
         }
@@ -215,13 +224,17 @@ class AnthropicMessagesExecutor:
     def __call__(self, entry: ModelEntry, ctx: RelayContext) -> str:
         _require(entry, "endpoint", "api_key")
         url = entry.endpoint.rstrip("/") + "/messages"
-        payload = {
+        payload: Dict[str, Any] = {
             "model": entry.model_id or entry.name,
             "max_tokens": self.max_tokens,
             # Claude 原生支持 assistant 预填（prefill），
             # 把本地已生成文本作为 assistant 消息接续
             "messages": ctx.chat_messages(),
         }
+        # Claude 用顶级 system 字段（不是 messages 里的 system role）
+        sys_hint = ctx.system_hint_for_continuation()
+        if sys_hint:
+            payload["system"] = sys_hint
         headers = {
             "x-api-key": entry.api_key,
             "anthropic-version": self.anthropic_version,
@@ -294,6 +307,12 @@ class GeminiGenerateContentExecutor:
                 for m in ctx.chat_messages(assistant_role="model")
             ],
         }
+        # Gemini 用 systemInstruction 字段
+        sys_hint = ctx.system_hint_for_continuation()
+        if sys_hint:
+            payload["systemInstruction"] = {
+                "parts": [{"text": sys_hint}]
+            }
         if self.generation_config:
             payload["generationConfig"] = self.generation_config
         out = _post_json(url, payload, headers, self.timeout)

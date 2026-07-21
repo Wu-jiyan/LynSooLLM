@@ -373,7 +373,13 @@ class LynSooApp:
                 info["route_label"] = ev.route_label
                 info["adapter"] = ev.adapter
                 info["route_ms"] = ev.payload.get("route_ms")
-        info["text"] = f"{''.join(local_parts)}{cloud_text}"
+        local_text = "".join(local_parts)
+        # 去重保护：如果云端没遵循 prefill 语义，返回的 cloud_text
+        # 可能以本地输出开头（云端重新生成了完整回答），此时剥掉前缀
+        # 避免拼接后内容重复
+        if local_text and cloud_text.startswith(local_text):
+            cloud_text = cloud_text[len(local_text):]
+        info["text"] = f"{local_text}{cloud_text}"
         return info
 
     # ------------------------------------------------------------------ #

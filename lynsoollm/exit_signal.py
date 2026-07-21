@@ -59,6 +59,26 @@ class RelayContext:
             msgs.append({"role": assistant_role, "content": self.generated_text})
         return msgs
 
+    def system_hint_for_continuation(self) -> Optional[str]:
+        """当本地有部分输出时，返回给云端的 system 提示，强化接续意图。
+
+        部分 OpenAI 兼容代理不完全支持 assistant prefill（会把 prefill
+        当普通历史消息，导致云端重新生成完整回答而非接续）。加这条
+        system 提示后，即使 prefill 被忽略，模型也能从 user 消息里
+        的"已开始回复"提示理解接续意图。
+
+        本地无输出时返回 None（hard_route 场景不需要接续提示）。
+        """
+        if not self.generated_text:
+            return None
+        return (
+            "You are continuing a response that the local assistant has "
+            "already started. The last assistant message contains the "
+            "beginning of the reply. Continue seamlessly from where it "
+            "ends. Do NOT repeat or rephrase what the assistant already "
+            "said. Do NOT add any preamble. Just output the continuation."
+        )
+
 
 @dataclass
 class EarlyExitSignal:
